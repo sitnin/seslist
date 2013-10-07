@@ -1,5 +1,9 @@
 # Amazon SES mail list sender
 
+Sometimes it is neccessary to send mail list via the tough channel like Amazon Simple Email Services. Just to be shure, this emails will arrive to the user's mailboxes and arrive perfectly in time. No matter how much it costs.
+
+This software tends to realize this need.
+
 ## Installation
 
     [sudo] npm install -g seslist
@@ -33,7 +37,7 @@ JSON-file which should contain two keys: `from` which is sender's email address 
 
 ### queue.csv
 
-	Should contain CSV-data with field names on a first row. `email` field is required, all other is optional. Every key from row will be passed to the template engine while generating email messages.
+Should contain CSV-data with field names on a first row. `email` field is required, all other is optional. Every key from row will be passed to the template engine while generating email messages.
 
 	"name","surname","email"
 	"Success","Target","success@simulator.amazonses.com"
