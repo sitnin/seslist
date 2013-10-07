@@ -1,0 +1,17 @@
+{
+  "name": "seslist",
+  "preferGlobal": true,
+  "version": "0.9.0",
+  "description": "SES mail list sender",
+  "bin": "sendEmails.js",
+  "scripts": {},
+  "repository": "",
+  "author": "Gregory Sitnin <greg@sitnin.com>",
+  "license": "MIT",
+  "dependencies": {
+    "nunjucks": "~0.1.10",
+    "aws-sdk": "~1.5.1",
+    "optimist": "~0.6.0",
+    "csv": "~0.3.6"
+  }
+}
