@@ -33,7 +33,7 @@ JSON-file which should contain two keys: `from` which is sender's email address 
 
 ### queue.csv
 
-	Should contain CSV-data with field names on a first row. `email` field is required, all other is optional. Every key from row will be passed to the template engine while generating email messages.
+Should contain CSV-data with field names on a first row. `email` field is required, all other is optional. Every key from row will be passed to the template engine while generating email messages.
 
 	"name","surname","email"
 	"Success","Target","success@simulator.amazonses.com"
