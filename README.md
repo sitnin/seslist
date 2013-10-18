@@ -1,6 +1,6 @@
 # Amazon SES mail list sender
 
-Sometimes it is neccessary to send mail list via the tough channel like Amazon Simple Email Services. Just to be shure, this emails will arrive to the user's mailboxes and arrive perfectly in time. No matter how much it costs.
+Sometimes it is necessary to send mail list via the tough channel like Amazon Simple Email Services. Just to be sure that emails will arrive to the user's mailboxes and arrive perfectly in time. No matter how much does it cost.
 
 This software tends to realize this need.
 
@@ -30,7 +30,8 @@ This software tends to realize this need.
 JSON-file which should contain two keys: `from` which is sender's email address and `subject` which is a mail message subject.
 
 	{
-		"from": "Gregory Sitnin <greg@sitnin.com>",
+		"from": "greg@sitnin.com",
+		"name": "Gregory Sitnin"
 		"subject": "This is a mailing list"
 	}
 
@@ -46,9 +47,18 @@ Should contain CSV-data with field names on a first row. `email` field is requir
 	"Complaint","List","complaint@simulator.amazonses.com"
 	,,"suppressionlist@simulator.amazonses.com"
 
-## Running
+## Usage
 
-	seslist -d <workingFolder> -k <key-json-file> [-r]
+    seslist --workdir <directory> --queuefile <filename> --keyfile <filename> [--queuefile <filename>] [--template <filename>] [--timeout <ms>] [--run]
+
+### Options:
+
+* `--workdir`, `-d` [required] working directory path (should contain meta.json, template and queue files)
+* `--keyfile`, `-k` [required] amazon ses keys in a json format (look at sample_keys.json)
+* `--queuefile`, `-q` [default: "queue.csv"] CSV-file whith the maillist variables (should contain email field)
+* `--template`, `-t` [default: "template.html"] nunjucks/jinja2 template file to render emails
+* `--timeout`, `-t` [default: 1000] timeout between email sendings (in milliseconds), for sending rate control
+* `--run`, `-r` [default: false] if true, emails will be send otherwise they will be rendered to the working directory
 
 ## Contacts
 
