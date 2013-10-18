@@ -1,6 +1,6 @@
 # Amazon SES mail list sender
 
-Sometimes it is necessary to send mail list via the tough channel like Amazon Simple Email Services. Just to be shure, this emails will arrive to the user's mailboxes and arrive perfectly in time. No matter how much it costs.
+Sometimes it is necessary to send mail list via the tough channel like Amazon Simple Email Services. Just to be sure that emails will arrive to the user's mailboxes and arrive perfectly in time. No matter how much does it cost.
 
 This software tends to realize this need.
 
