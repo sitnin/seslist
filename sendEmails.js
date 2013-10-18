@@ -12,7 +12,7 @@ var mimelib = require('mimelib');
 console.log("seslist "+pkgInfo.version);
 
 var argv = optimist
-    .usage("Usage:\n  seslist --workdir <directory> --queuefile <filename> --keyfile <filename> [--template <filename>] [--run]")
+    .usage("Usage:\n  seslist --workdir <directory> --queuefile <filename> --keyfile <filename> [--queuefile <filename>] [--template <filename>] [--timeout <ms>] [--run]")
     .boolean(["r"])
     .default({
         "queuefile": "queue.csv",
