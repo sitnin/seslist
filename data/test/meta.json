@@ -1,6 +1,5 @@
 {
-	"from": "\"Анна Шарлай\" <order@annasharlay.com>",
-	"subject": "Видео вебинара \"Как и почему меняется образ женщины и мужчины\"",
-	"template": "webinar-131001.html",
-	"queue": "webinar-131001.csv"
+	"from": "greg@sitnin.com",
+	"name": "Григорий Ситнин",
+	"subject": "Тестовое письмо из \"seslist\""
 }
