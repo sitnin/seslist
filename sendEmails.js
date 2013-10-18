@@ -1,36 +1,156 @@
 #!/usr/bin/env node
-var argv = require('optimist').argv;
-var stream = require("stream");
-var util = require("util");
+var pkgInfo = require("./package.json");
 var fs = require("fs");
-var csv = require("csv");
 var path = require("path");
+var util = require("util");
+var csv = require("csv");
+var optimist = require('optimist');
+var mimelib = require('mimelib');
+
+// Setup CLI
+
+console.log("seslist "+pkgInfo.version);
+
+var argv = optimist
+    .usage("Usage:\n  seslist --workdir <directory> --queuefile <filename> --keyfile <filename> [--template <filename>] [--run]")
+    .boolean(["r"])
+    .default({
+        "queuefile": "queue.csv",
+        "template": "template.html",
+        "timeout": 1000,
+        "run": false
+    })
+    .demand(["workdir", "keyfile"])
+    .alias({
+        "workdir": "d",
+        "queuefile": "q",
+        "keyfile": "k",
+        "template": "t",
+        "run": "r",
+        "timeout": "t"
+    })
+    .argv;
+
+// Check if workdir set correctly
+
+if ("boolean" === typeof argv.workdir) {
+    optimist.showHelp();
+    process.exit(-1);
+}
+
+var workingDir = path.resolve(argv.workdir);
+if (!fs.existsSync(workingDir)) {
+    optimist.showHelp();
+    console.error("Cannot find working directory", workingDir);
+    process.exit(-1);
+}
+
+console.log("Working directory is", workingDir);
+
+// Check if keyfile set correctly
+
+if ("boolean" === typeof argv.keyfile) {
+    optimist.showHelp();
+    process.exit(-1);
+}
+
+var keyFilename = path.resolve(argv.k);
+if (!fs.existsSync(keyFilename)) {
+    optimist.showHelp();
+    console.error("Cannot find keyfile", keyFilename);
+    process.exit(-1);
+}
+
+console.log("Keyfile is", keyFilename);
+
+// Check if queuefile set correctly
+
+if ("boolean" === typeof argv.queuefile) {
+    optimist.showHelp();
+    process.exit(-1);
+}
+
+var queueFilename = path.resolve(path.join(workingDir, argv.queuefile));
+if (!fs.existsSync(queueFilename)) {
+    optimist.showHelp();
+    console.error("Cannot find queue file", queueFilename);
+    process.exit(-1);
+}
+
+console.log("Queue file is", queueFilename);
+
+// Check if template filename set correctly
+
+if ("boolean" === typeof argv.template) {
+    optimist.showHelp();
+    process.exit(-1);
+}
+
+var templateFilename = path.resolve(path.join(workingDir, argv.template));
+if (!fs.existsSync(templateFilename)) {
+    optimist.showHelp();
+    console.error("Cannot find template file", templateFilename);
+    process.exit(-1);
+}
+
+console.log("Template file is", templateFilename);
+
+// Check if meta.json exists
+
+var metaFilename = path.resolve(path.join(workingDir, "meta.json"));
+if (!fs.existsSync(metaFilename)) {
+    optimist.showHelp();
+    console.error("Cannot find meta file", metaFilename);
+    process.exit(-1);
+}
+
+console.log("Meta file is", metaFilename);
+
+// Setup timeout
+
+var timeoutSize = argv.timeout;
+console.log("Timeout set to", argv.timeout, "ms");
+
+// Init AWS-SDK
 
 var aws = require('aws-sdk');
-aws.config.loadFromPath(argv.k);
+aws.config.loadFromPath(keyFilename);
 var ses = new aws.SES();
 
-var queue = [];
-var log = {};
-
-var workingDir = path.resolve(argv.d);
-console.log("Working dir is", workingDir)
+// Init nunjucks
 
 var nunjucks = require('nunjucks');
-var nun = new nunjucks.Environment(new nunjucks.FileSystemLoader(argv.d));
+var nun = new nunjucks.Environment(new nunjucks.FileSystemLoader(workingDir));
+var messageTpl = nun.getTemplate(argv.template);
 
-var queueFile = path.join(workingDir, "queue.csv");
-var metaFile = path.join(workingDir, "meta.json");
+console.log("Loading", metaFilename);
 
-console.log("Loading", metaFile);
-var listMeta = require(metaFile);
+// Load and handle list metafile
 
-var messageTpl = nun.getTemplate("template.html");
+try {
+    var listMeta = require(metaFilename);
+} catch (ex) {
+    console.error("Cannot load meta.json:", ex.message);
+    process.exit(-1);
+}
+
+if (!listMeta.hasOwnProperty("from") || !listMeta.hasOwnProperty("subject")) {
+    console.error('Meta file should contain "from" and "subject" keys.');
+    process.exit(1);
+}
+
+// Setup "from" field
+
+var workingFrom = !!listMeta.name ? util.format("%s <%s>", mimelib.encodeMimeWord(listMeta.name), listMeta.from) : listMeta.from;
+
+// Main
 
 var header = null;
+var queue = [];
 var data = [];
+var log = {};
 
-csv().from(queueFile, {
+csv().from(queueFilename, {
     columns: true
 }).transform(function (row, index) {
     data.push(row);
@@ -42,12 +162,11 @@ csv().from(queueFile, {
         queue.push(recipient);
     });
 
-    if (argv.r) {
+    if (argv.run) {
         console.log("Running queue");
 
         var totalQueueLength = queue.length;
         var currentQueuePosition = 0;
-        var timeoutSize = !!argv.t ? 1000/argv.t : 250;
         var timer = setInterval(function () {
             var chunk = queue.pop();
             var now = (new Date()).getTime();
@@ -57,7 +176,7 @@ csv().from(queueFile, {
                 console.log("Message", currentQueuePosition, "of", totalQueueLength, "["+chunk.email+"]");
 
                 ses.sendEmail({
-                    Source: listMeta.from,
+                    Source: workingFrom,
                     Destination: {
                         ToAddresses: [chunk.email]
                     },
@@ -85,7 +204,7 @@ csv().from(queueFile, {
                     }
                 });
             } else {
-                console.log("END OF QUEUE");
+                console.log("QUEUE DRAINED");
                 clearInterval(timer);
             }
         }, timeoutSize);
