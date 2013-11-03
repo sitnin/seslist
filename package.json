@@ -1,7 +1,7 @@
 {
   "name": "seslist",
   "preferGlobal": true,
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "SES mail list sender",
   "bin": "sendEmails.js",
   "scripts": {},
