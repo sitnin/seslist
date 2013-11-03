@@ -27,7 +27,7 @@ var argv = optimist
         "keyfile": "k",
         "template": "t",
         "run": "r",
-        "timeout": "t"
+        "timeout": "z"
     })
     .argv;
 
