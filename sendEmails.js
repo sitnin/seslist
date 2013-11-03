@@ -158,7 +158,14 @@ csv().from(queueFilename, {
 .on('end', function () {
     data.forEach(function (recipient) {
         console.log("Adding", recipient.email, "to queue");
-        recipient.message = messageTpl.render(recipient);
+        var tplDict = {};
+        Object.keys(listMeta).forEach(function (key) {
+            tplDict[key] = listMeta[key];
+        });
+        Object.keys(recipient).forEach(function (key) {
+            tplDict[key] = recipient[key];
+        });
+        recipient.message = messageTpl.render(tplDict);
         queue.push(recipient);
     });
 

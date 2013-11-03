@@ -35,6 +35,7 @@ JSON-file which should contain two keys: `from` which is sender's email address 
 		"subject": "This is a mailing list"
 	}
 
+This file also may contain any number of additional keys which will be passed to the template renderer.
 
 ### queue.csv
 
