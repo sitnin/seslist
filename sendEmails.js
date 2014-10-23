@@ -1,33 +1,37 @@
 #!/usr/bin/env node
+
 var pkgInfo = require("./package.json");
 var fs = require("fs");
 var path = require("path");
 var util = require("util");
-var csv = require("csv");
+var csv = require("csv-parse");
 var optimist = require('optimist');
-var mimelib = require('mimelib');
+var nodemailer = require('nodemailer');
+var sesTransport = require('nodemailer-ses-transport');
+var Promise = require("bluebird").Promise;
 
 // Setup CLI
 
 console.log("seslist "+pkgInfo.version);
 
 var argv = optimist
-    .usage("Usage:\n  seslist --workdir <directory> --queuefile <filename> --keyfile <filename> [--queuefile <filename>] [--template <filename>] [--timeout <ms>] [--run]")
+    .usage("Usage:\n  seslist --workdir <directory> [--queuefile <filename>] [--keyfile <filename>] [--queuefile <filename>] [--template <filename>] [--rate <count>] [--run]")
     .boolean(["r"])
     .default({
         "queuefile": "queue.csv",
         "template": "template.html",
-        "timeout": 1000,
+        "rate": 5,
+        "keyfile": "./keys.json",
         "run": false
     })
-    .demand(["workdir", "keyfile"])
+    .demand(["workdir"])
     .alias({
         "workdir": "d",
         "queuefile": "q",
         "keyfile": "k",
         "template": "t",
         "run": "r",
-        "timeout": "z"
+        "rate": "z"
     })
     .argv;
 
@@ -53,15 +57,6 @@ if ("boolean" === typeof argv.keyfile) {
     optimist.showHelp();
     process.exit(-1);
 }
-
-var keyFilename = path.resolve(argv.k);
-if (!fs.existsSync(keyFilename)) {
-    optimist.showHelp();
-    console.error("Cannot find keyfile", keyFilename);
-    process.exit(-1);
-}
-
-console.log("Keyfile is", keyFilename);
 
 // Check if queuefile set correctly
 
@@ -106,16 +101,24 @@ if (!fs.existsSync(metaFilename)) {
 
 console.log("Meta file is", metaFilename);
 
-// Setup timeout
-
-var timeoutSize = argv.timeout;
-console.log("Timeout set to", argv.timeout, "ms");
-
-// Init AWS-SDK
-
-var aws = require('aws-sdk');
-aws.config.loadFromPath(keyFilename);
-var ses = new aws.SES();
+var aws_keys = null;
+var keyFilename = path.resolve(argv.k);
+if (!fs.existsSync(keyFilename)) {
+    console.warn("WARNING: Keyfile", keyFilename, "not found");
+    if (argv.run) {
+        optimist.showHelp();
+        console.error("Cannot run without keyfile", keyFilename);
+        process.exit(-1);
+    }
+} else {
+    console.log("Keyfile is", keyFilename);
+    try {
+        aws_keys = require(keyFilename);
+    } catch (ex) {
+        console.error("Cannot load keyfile:", ex.message);
+        process.exit(-1);
+    }
+}
 
 // Init nunjucks
 
@@ -141,7 +144,7 @@ if (!listMeta.hasOwnProperty("from") || !listMeta.hasOwnProperty("subject")) {
 
 // Setup "from" field
 
-var workingFrom = !!listMeta.name ? util.format("%s <%s>", mimelib.encodeMimeWord(listMeta.name), listMeta.from) : listMeta.from;
+var workingFrom = !!listMeta.name ? util.format("%s <%s>", listMeta.name, listMeta.from) : listMeta.from;
 
 // Main
 
@@ -150,12 +153,24 @@ var queue = [];
 var data = [];
 var log = {};
 
-csv().from(queueFilename, {
-    columns: true
-}).transform(function (row, index) {
-    data.push(row);
-})
-.on('end', function () {
+var pQueue = new Promise(function (resolve, reject) {
+    var parser = new csv({
+        delimiter: ",",
+        columns: true,
+        auto_parse: true,
+        skip_empty_lines: true,
+        trim: true
+    }, function (err, data) {
+        if (err) {
+            reject(err);
+        } else {
+            resolve(data);
+        }
+    });
+    fs.createReadStream(queueFilename).pipe(parser);
+});
+
+pQueue.then(function (data) {
     data.forEach(function (recipient) {
         console.log("Adding", recipient.email, "to queue");
         var tplDict = {};
@@ -170,57 +185,60 @@ csv().from(queueFilename, {
     });
 
     if (argv.run) {
-        console.log("Running queue");
+        var transporter = nodemailer.createTransport(sesTransport({
+            accessKeyId: aws_keys.accessKeyId,
+            secretAccessKey: aws_keys.secretAccessKey,
+            rateLimit: argv.rate
+        }));
 
-        var totalQueueLength = queue.length;
-        var currentQueuePosition = 0;
-        var timer = setInterval(function () {
-            var chunk = queue.pop();
-            var now = (new Date()).getTime();
+        var sendPromisesQueue = [];
+        queue.forEach(function (item) {
+            var p = new Promise(function (resolve, reject) {
+                var message = {
+                    from: workingFrom,
+                    to: item.email,
+                    subject: listMeta.subject,
+                    html: item.message
+                };
 
-            if (!!chunk) {
-                currentQueuePosition++;
-                console.log("Message", currentQueuePosition, "of", totalQueueLength, "["+chunk.email+"]");
+                if (!!listMeta.attachments) {
+                    message.attachments = [];
+                    listMeta.attachments.forEach(function (filename) {
+                        message.attachments.push({
+                            filename: filename,
+                            path: path.join(workingDir, filename),
+                            cid: filename
+                        });
+                    });
+                }
 
-                ses.sendEmail({
-                    Source: workingFrom,
-                    Destination: {
-                        ToAddresses: [chunk.email]
-                    },
-                    Message: {
-                        Subject: {
-                            Data: listMeta.subject,
-                            Charset: "utf-8"
-                        },
-                        Body: {
-                            Html: {
-                                Data: chunk.message,
-                                Charset: "utf-8"
-                            }
-                        }
-                    }
-                }, function (err, data) {
-                    log[chunk.email] = {
-                        error: err,
-                        data: data
-                    }
+                transporter.sendMail(message, function (err, info) {
                     if (err) {
-                        console.log("ERROR", chunk.email, err.message, data);
+                        resolve([item.email, err]);
                     } else {
-                        console.log("OK", chunk.email, data);
+                        resolve([item.email, info.messageId]);
                     }
                 });
-            } else {
-                console.log("QUEUE DRAINED");
-                clearInterval(timer);
-            }
-        }, timeoutSize);
+            });
+
+            sendPromisesQueue.push(p);
+        });
+
+        console.log("Running queue...");
+        Promise.all(sendPromisesQueue).then(function (data) {
+            console.log("All emails are sent and this is the report");
+            data.forEach(function (report) {
+                if (report[1] instanceof Error) {
+                    console.log("To:", report[0], "ERROR:", report[1].message);
+                } else {
+                    console.log("To:", report[0], "OK:", report[1]);
+                }
+            });
+        });
     } else {
-        console.log("Rendering queue");
+        console.log("Rendering queue...");
         queue.forEach(function (chunk) {
             fs.writeFileSync(path.join(workingDir, "out_"+chunk.email+".html"), chunk.message);
         });
-        console.log("END OF QUEUE");
     }
-
 });

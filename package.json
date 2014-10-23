@@ -1,18 +1,18 @@
 {
   "name": "seslist",
   "preferGlobal": true,
-  "version": "0.10.2",
+  "version": "1.0.0",
   "description": "SES mail list sender",
   "bin": "sendEmails.js",
-  "scripts": {},
   "repository": "https://github.com/sitnin/seslist.git",
   "author": "Gregory Sitnin <greg@sitnin.com>",
   "license": "MIT",
   "dependencies": {
-    "nunjucks": "~0.1",
-    "aws-sdk": "~1.5",
-    "optimist": "~0.6",
-    "csv": "~0.3",
-    "mimelib": "~0.2"
+    "bluebird": "^2.3.6",
+    "csv-parse": "0.0.6",
+    "nodemailer": "^1.3.0",
+    "nodemailer-ses-transport": "^1.2.0",
+    "nunjucks": "^1.1.0",
+    "optimist": "^0.6.1"
   }
 }
