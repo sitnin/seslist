@@ -5,7 +5,6 @@ var path = require("path");
 var util = require("util");
 var csv = require("csv");
 var optimist = require('optimist');
-var mimelib = require('mimelib');
 
 // Setup CLI
 
@@ -141,7 +140,7 @@ if (!listMeta.hasOwnProperty("from") || !listMeta.hasOwnProperty("subject")) {
 
 // Setup "from" field
 
-var workingFrom = !!listMeta.name ? util.format("%s <%s>", mimelib.encodeMimeWord(listMeta.name), listMeta.from) : listMeta.from;
+var workingFrom = !!listMeta.name ? util.format("%s <%s>", listMeta.name, listMeta.from) : listMeta.from;
 
 // Main
 
@@ -182,34 +181,35 @@ csv().from(queueFilename, {
                 currentQueuePosition++;
                 console.log("Message", currentQueuePosition, "of", totalQueueLength, "["+chunk.email+"]");
 
-                ses.sendEmail({
-                    Source: workingFrom,
-                    Destination: {
-                        ToAddresses: [chunk.email]
-                    },
-                    Message: {
-                        Subject: {
-                            Data: listMeta.subject,
-                            Charset: "utf-8"
-                        },
-                        Body: {
-                            Html: {
-                                Data: chunk.message,
-                                Charset: "utf-8"
-                            }
-                        }
-                    }
-                }, function (err, data) {
-                    log[chunk.email] = {
-                        error: err,
-                        data: data
-                    }
-                    if (err) {
-                        console.log("ERROR", chunk.email, err.message, data);
-                    } else {
-                        console.log("OK", chunk.email, data);
-                    }
-                });
+                //ses.sendEmail({
+                //    Source: workingFrom,
+                //    Destination: {
+                //        ToAddresses: [chunk.email]
+                //    },
+                //    Message: {
+                //        Subject: {
+                //            Data: listMeta.subject,
+                //            Charset: "utf-8"
+                //        },
+                //        Body: {
+                //            Html: {
+                //                Data: chunk.message,
+                //                Charset: "utf-8"
+                //            }
+                //        }
+                //    }
+                //}, function (err, data) {
+                //    log[chunk.email] = {
+                //        error: err,
+                //        data: data
+                //    }
+                //    if (err) {
+                //        console.log("ERROR", chunk.email, err.message, data);
+                //    } else {
+                //        console.log("OK", chunk.email, data);
+                //    }
+                //});
+
             } else {
                 console.log("QUEUE DRAINED");
                 clearInterval(timer);
