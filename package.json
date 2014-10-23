@@ -1,8 +1,8 @@
 {
   "name": "seslist",
   "preferGlobal": true,
-  "version": "1.0.2",
-  "tag": "1.0.2",
+  "version": "1.0.2-2",
+  "tag": "1.0.2-2",
   "description": "SES mail list sender",
   "bin": "sendEmails.js",
   "repository": "https://github.com/sitnin/seslist.git",
