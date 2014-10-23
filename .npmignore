@@ -1,8 +1,9 @@
 data
-!data/test
+!data/test/
 node_modules
 *_keys.json
 !sample_keys.json
 README.html
 .gitignore
+.npmignore
 .idea/
