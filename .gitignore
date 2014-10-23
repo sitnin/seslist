@@ -4,3 +4,4 @@ node_modules
 *_keys.json
 !sample_keys.json
 README.html
+.idea/
