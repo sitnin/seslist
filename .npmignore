@@ -1,5 +1,6 @@
 data
 !data/test/
+data/test2/
 node_modules
 *_keys.json
 !sample_keys.json
