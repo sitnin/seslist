@@ -189,11 +189,21 @@ pQueue.then(function (data) {
     });
 
     if (argv.run) {
-        var transporter = nodemailer.createTransport(sesTransport({
-            accessKeyId: aws_keys.accessKeyId,
-            secretAccessKey: aws_keys.secretAccessKey,
-            rateLimit: argv.rate
-        }));
+        var transFunc = null;
+        if ("ses" === argv.transport) {
+            transFunc = sesTransport({
+                accessKeyId: aws_keys.accessKeyId,
+                secretAccessKey: aws_keys.secretAccessKey,
+                rateLimit: argv.rate
+            });
+        } else if ("mandrill" === argv.transport) {
+            transFunc = mandrillTransport(aws_keys);
+        } else {
+            console.error("Unknown transport type", argv.transport);
+            process.exit(1);
+        }
+
+        var transporter = nodemailer.createTransport(transFunc);
 
         var sendPromisesQueue = [];
         queue.forEach(function (item) {
