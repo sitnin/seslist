@@ -44,6 +44,8 @@ Additionally you can add ``attachments`` key to the meta dictionary which consis
 		"attachments": ["somepic.jpg", "file.pdf"]
 	}
 
+All other keys from this JSON will be passed to the email template while rendering particular message.
+
 
 ### queue.csv
 
@@ -63,13 +65,34 @@ Should contain CSV-data with field names on a first row. `email` field is requir
 ### Options:
 
 * `--workdir`, `-d` [required] working directory path (should contain meta.json, template and queue files)
-* `--keyfile`, `-k` [required for --run mode] amazon ses keys in a json format (look at sample_keys.json)
+* `--keyfile`, `-k` [required for --run mode] transport setup in json format (see examples below)
 * `--queuefile`, `-q` [default: "queue.csv"] CSV-file whith the maillist variables (should contain email field)
 * `--template`, `-t` [default: "template.html"] nunjucks/jinja2 template file to render emails
 * `--rate`, `-z` [default: 5] Amazon SES rate limit (emails per second)
 * `--run`, `-r` [default: false] if true, emails will be send otherwise they will be rendered to the working directory
 
+### Keys file for SES
+
+    {
+        "accessKeyId": "Your-App-Key-Id",
+        "secretAccessKey": "Your-App-Secret-Access-Key"
+    }
+
+### Keys file for Mandrill
+
+    {
+        "auth": {
+            "apiKey": "Your-Mandrill-Api-Key"
+        }
+    }
+
 ## Changelog
+
+### Version 1.1.0
+
+  * Heavily updated dependencies
+  * Added Mandrill support (only direct sending, no templates)
+  * JSON files now supports commentaries (with double-slash)
 
 ### Version 1.0.0
 
