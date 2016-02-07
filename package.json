@@ -1,9 +1,9 @@
 {
   "name": "seslist",
   "preferGlobal": true,
-  "version": "1.0.3",
-  "tag": "1.0.3",
-  "description": "SES mail list sender",
+  "version": "1.5.0",
+  "tag": "1.5.0",
+  "description": "Mail list sender (via SES or Mandrill)",
   "bin": "sendEmails.js",
   "repository": "https://github.com/sitnin/seslist.git",
   "author": "Gregory Sitnin <greg@sitnin.com>",
