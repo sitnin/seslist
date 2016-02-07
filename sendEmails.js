@@ -8,6 +8,9 @@ var csv = require("csv-parse");
 var optimist = require('optimist');
 var nodemailer = require('nodemailer');
 var sesTransport = require('nodemailer-ses-transport');
+var mandrillTransport = require('nodemailer-mandrill-transport');
+var cjson = require("cjson");
+var nunjucks = require('nunjucks');
 var Promise = require("bluebird").Promise;
 
 // Setup CLI
@@ -15,14 +18,15 @@ var Promise = require("bluebird").Promise;
 console.log("seslist "+pkgInfo.version);
 
 var argv = optimist
-    .usage("Usage:\n  seslist --workdir <directory> [--queuefile <filename>] [--keyfile <filename>] [--queuefile <filename>] [--template <filename>] [--rate <count>] [--run]")
+    .usage("Usage:\n  seslist --workdir <directory> [--queuefile <filename>] [--keyfile <filename>] [--queuefile <filename>] [--template <filename>] [--rate <count>] [--transport <ses|mandrill>] [--run]")
     .boolean(["r"])
     .default({
         "queuefile": "queue.csv",
         "template": "template.html",
         "rate": 5,
         "keyfile": "./keys.json",
-        "run": false
+        "run": false,
+        "transport": "ses"
     })
     .demand(["workdir"])
     .alias({
@@ -31,7 +35,8 @@ var argv = optimist
         "keyfile": "k",
         "template": "t",
         "run": "r",
-        "rate": "z"
+        "rate": "z",
+        "transport": "p"
     })
     .argv;
 
@@ -113,7 +118,7 @@ if (!fs.existsSync(keyFilename)) {
 } else {
     console.log("Keyfile is", keyFilename);
     try {
-        aws_keys = require(keyFilename);
+        aws_keys = cjson.load(keyFilename);
     } catch (ex) {
         console.error("Cannot load keyfile:", ex.message);
         process.exit(-1);
@@ -122,7 +127,6 @@ if (!fs.existsSync(keyFilename)) {
 
 // Init nunjucks
 
-var nunjucks = require('nunjucks');
 var nun = new nunjucks.Environment(new nunjucks.FileSystemLoader(workingDir));
 var messageTpl = nun.getTemplate(argv.template);
 
@@ -131,7 +135,7 @@ console.log("Loading", metaFilename);
 // Load and handle list metafile
 
 try {
-    var listMeta = require(metaFilename);
+    var listMeta = cjson.load(metaFilename);
 } catch (ex) {
     console.error("Cannot load meta.json:", ex.message);
     process.exit(-1);
@@ -185,11 +189,21 @@ pQueue.then(function (data) {
     });
 
     if (argv.run) {
-        var transporter = nodemailer.createTransport(sesTransport({
-            accessKeyId: aws_keys.accessKeyId,
-            secretAccessKey: aws_keys.secretAccessKey,
-            rateLimit: argv.rate
-        }));
+        var transFunc = null;
+        if ("ses" === argv.transport) {
+            transFunc = sesTransport({
+                accessKeyId: aws_keys.accessKeyId,
+                secretAccessKey: aws_keys.secretAccessKey,
+                rateLimit: argv.rate
+            });
+        } else if ("mandrill" === argv.transport) {
+            transFunc = mandrillTransport(aws_keys);
+        } else {
+            console.error("Unknown transport type", argv.transport);
+            process.exit(1);
+        }
+
+        var transporter = nodemailer.createTransport(transFunc);
 
         var sendPromisesQueue = [];
         queue.forEach(function (item) {
@@ -224,7 +238,7 @@ pQueue.then(function (data) {
             sendPromisesQueue.push(p);
         });
 
-        console.log("Running queue...");
+        console.log("Running queue (it will take some time)...");
         Promise.all(sendPromisesQueue).then(function (data) {
             console.log("All emails are sent and this is the report");
             data.forEach(function (report) {

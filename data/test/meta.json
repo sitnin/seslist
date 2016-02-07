@@ -1,5 +1,6 @@
 {
 	"from": "greg@sitnin.com",
 	"name": "Григорий Ситнин",
-	"subject": "Тестовое письмо из \"seslist\""
+	"subject": "Тестовое письмо из \"seslist\"",
+    "testVar": "This is a list meta-var"
 }

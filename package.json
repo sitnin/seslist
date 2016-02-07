@@ -1,19 +1,21 @@
 {
   "name": "seslist",
   "preferGlobal": true,
-  "version": "1.0.3",
-  "tag": "1.0.3",
-  "description": "SES mail list sender",
+  "version": "1.5.0",
+  "tag": "1.5.0",
+  "description": "Mail list sender (via SES or Mandrill)",
   "bin": "sendEmails.js",
   "repository": "https://github.com/sitnin/seslist.git",
   "author": "Gregory Sitnin <greg@sitnin.com>",
   "license": "MIT",
   "dependencies": {
-    "csv-parse": "0.0.6",
-    "bluebird": "^2.3.6",
-    "nodemailer": "^1.3.0",
-    "nodemailer-ses-transport": "^1.2.0",
-    "nunjucks": "^1.1.0",
+    "bluebird": "^3.2.2",
+    "cjson": "^0.3.3",
+    "csv-parse": "^1.0.1",
+    "nodemailer": "^2.1.0",
+    "nodemailer-mandrill-transport": "^1.0.0",
+    "nodemailer-ses-transport": "^1.3.0",
+    "nunjucks": "^2.3.0",
     "optimist": "^0.6.1"
   }
 }
