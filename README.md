@@ -88,7 +88,7 @@ Should contain CSV-data with field names on a first row. `email` field is requir
 
 ## Changelog
 
-### Version 1.1.0
+### Version 1.5.0
 
   * Heavily updated dependencies
   * Added Mandrill support (only direct sending, no templates)
@@ -107,8 +107,6 @@ Should contain CSV-data with field names on a first row. `email` field is requir
 Long time there was 0.x version. It worked, but wasn't good enough for me.
 I've decided to release 1.x major release due to various circumstances,
 but mainly because the tool is tested on about 100 email sending sessions.
-
-Also,
 
 ## Contacts
 
