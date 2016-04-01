@@ -85,6 +85,16 @@ Should contain CSV-data with field names on a first row. `email` field is requir
             "apiKey": "Your-Mandrill-Api-Key"
         }
     }
+    
+And you can also combine both:
+
+    {
+        "accessKeyId": "Your-App-Key-Id",
+        "secretAccessKey": "Your-App-Secret-Access-Key",
+        "auth": {
+            "apiKey": "Your-Mandrill-Api-Key"
+        }
+    }
 
 ## Changelog
 
